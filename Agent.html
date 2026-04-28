@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>End of Day Reflection</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0e;
+    --surface: #141416;
+    --border: #1f1f23;
+    --text-primary: #e8e4dc;
+    --text-secondary: #7a7570;
+    --text-muted: #3d3a37;
+    --accent: #c8a96e;
+    --accent-dim: #8a6e3e;
+    --axis1: #7eb8a4;
+    --axis2: #a07eb8;
+    --axis3: #b87e7e;
+    --glow: rgba(200, 169, 110, 0.06);
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    overflow-x: hidden;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 680px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-title {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .header-time {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 56px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .progress-fill {
+    height: 1px;
+    background: linear-gradient(90deg, var(--axis1), var(--accent));
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .axis-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .axis-marker {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    transition: color 0.4s;
+  }
+
+  .axis-marker.active { color: var(--accent); }
+
+  /* Main card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: relative;
+    animation: cardIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, var(--glow), transparent 70%);
+    pointer-events: none;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Node type label */
+  .node-type-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .node-type-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .type-start { color: var(--axis1); }
+  .type-question { color: var(--accent); }
+  .type-reflection { color: var(--axis2); }
+  .type-bridge { color: var(--text-muted); }
+  .type-summary { color: var(--axis3); }
+  .type-end { color: var(--text-muted); }
+
+  /* Question text */
+  .question-text {
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1.45;
+    color: var(--text-primary);
+    margin-bottom: 40px;
+    font-style: italic;
+  }
+
+  .body-text {
+    font-size: 19px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: 36px;
+    font-style: italic;
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .option-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 16px 22px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-weight: 300;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .option-btn::before {
+    content: attr(data-index);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    min-width: 14px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .option-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--text-primary);
+    background: rgba(200, 169, 110, 0.04);
+  }
+
+  .option-btn:hover::before {
+    color: var(--accent);
+  }
+
+  .option-btn.selected {
+    border-color: var(--accent);
+    color: var(--text-primary);
+    background: rgba(200, 169, 110, 0.08);
+  }
+
+  .option-btn.selected::before {
+    color: var(--accent);
+  }
+
+  /* Continue button */
+  .continue-btn {
+    background: transparent;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    padding: 12px 28px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    margin-top: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .continue-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .continue-btn::after {
+    content: '→';
+    font-size: 14px;
+    font-family: serif;
+  }
+
+  /* Summary */
+  .summary-block {
+    margin-bottom: 28px;
+  }
+
+  .summary-axis {
+    border-left: 2px solid var(--border);
+    padding: 14px 20px;
+    margin-bottom: 12px;
+    transition: border-color 0.3s;
+  }
+
+  .summary-axis.axis1 { border-color: var(--axis1); }
+  .summary-axis.axis2 { border-color: var(--axis2); }
+  .summary-axis.axis3 { border-color: var(--axis3); }
+
+  .summary-axis-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .summary-axis-text {
+    font-size: 17px;
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .closing-insight {
+    font-size: 20px;
+    font-style: italic;
+    color: var(--text-primary);
+    font-weight: 300;
+    line-height: 1.6;
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* State debug (hidden by default) */
+  .debug-panel {
+    display: none;
+    margin-top: 40px;
+    padding: 20px;
+    background: #0a0a0b;
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  /* Spinner for loading */
+  .loading {
+    text-align: center;
+    padding: 60px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+  }
+
+  /* Error */
+  .error {
+    padding: 40px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #b87e7e;
+    line-height: 1.7;
+    border: 1px solid #3d2020;
+    background: #1a0e0e;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-node-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+  .footer-path {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+
+  /* File loader (shown only when tree.json not auto-loaded) */
+  .file-loader {
+    text-align: center;
+    padding: 60px 40px;
+  }
+
+  .file-loader h2 {
+    font-size: 24px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .file-loader p {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  .file-input-wrapper {
+    display: inline-block;
+    position: relative;
+  }
+
+  .file-input-wrapper input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .file-input-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+    padding: 12px 28px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .file-input-label:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-title">End of Day · Reflection</div>
+    <div class="header-time" id="clock"></div>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+  <div class="axis-markers">
+    <span class="axis-marker" id="m-locus">Locus</span>
+    <span class="axis-marker" id="m-orientation">Orientation</span>
+    <span class="axis-marker" id="m-radius">Radius</span>
+    <span class="axis-marker" id="m-close">Close</span>
+  </div>
+
+  <div id="main" class="loading">Loading reflection tree...</div>
+
+  <div class="footer">
+    <span class="footer-node-id" id="footerNodeId"></span>
+    <span class="footer-path" id="footerPath"></span>
+  </div>
+
+  <div class="debug-panel" id="debugPanel"></div>
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const state = {
+  tree: null,          // full node map { id → node }
+  currentId: null,
+  answers: {},         // { nodeId: selectedOption }
+  path: [],            // visited node ids
+  signals: {
+    axis1: { internal: 0, external: 0 },
+    axis2: { contribution: 0, entitlement: 0 },
+    axis3: { other: 0, self: 0 }
+  },
+  totalNodes: 0,
+  interactiveVisited: 0,
+  totalInteractive: 0
+};
+
+// ============================================================
+//  LOAD TREE
+// ============================================================
+function buildNodeMap(nodes) {
+  const map = {};
+  nodes.forEach(n => { map[n.id] = n; });
+  return map;
+}
+
+function countInteractive(map) {
+  return Object.values(map).filter(n => n.type === 'question').length;
+}
+
+async function loadTree() {
+  // Try to fetch reflection-tree.json from same directory
+  try {
+    const resp = await fetch('reflection-tree.json');
+    if (!resp.ok) throw new Error('not found');
+    const data = await resp.json();
+    initTree(data);
+  } catch {
+    // Show file picker
+    showFilePicker();
+  }
+}
+
+function showFilePicker() {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="file-loader fade-in">
+      <h2>Load your reflection tree</h2>
+      <p>Place reflection-tree.json in the same folder as this file,<br>or select it manually below.</p>
+      <div class="file-input-wrapper">
+        <input type="file" accept=".json" id="fileInput">
+        <div class="file-input-label">↑ Select reflection-tree.json</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        initTree(data);
+      } catch {
+        showError('Could not parse JSON. Check your file.');
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function initTree(data) {
+  state.tree = buildNodeMap(data.nodes);
+  state.totalNodes = data.nodes.length;
+  state.totalInteractive = countInteractive(state.tree);
+  goTo('START');
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function goTo(id) {
+  const node = state.tree[id];
+  if (!node) { showError(`Node "${id}" not found in tree.`); return; }
+
+  state.currentId = id;
+  state.path.push(id);
+
+  // Record signal
+  if (node.signal) recordSignal(node.signal);
+
+  // Update footer
+  document.getElementById('footerNodeId').textContent = id;
+  document.getElementById('footerPath').textContent = state.path.slice(-4).join(' → ');
+
+  // Update progress
+  updateProgress(node);
+
+  renderNode(node);
+
+  // Auto-advance non-interactive nodes after short delay
+  const autoTypes = ['start', 'bridge', 'decision'];
+  if (autoTypes.includes(node.type)) {
+    if (node.type === 'decision') {
+      resolveDecision(node);
+    } else {
+      const delay = node.type === 'start' ? 2000 : 1200;
+      setTimeout(() => advance(node), delay);
+    }
+  }
+}
+
+function advance(node) {
+  if (node.target) {
+    goTo(node.target);
+    return;
+  }
+  // Find first child in tree
+  const children = Object.values(state.tree).filter(n => n.parentId === node.id && n.type !== 'decision');
+  if (children.length === 1) {
+    goTo(children[0].id);
+    return;
+  }
+  // Look for decision child
+  const dec = Object.values(state.tree).find(n => n.parentId === node.id && n.type === 'decision');
+  if (dec) { goTo(dec.id); return; }
+}
+
+function resolveDecision(node) {
+  // Find parent question answer
+  const parentNode = state.tree[node.parentId];
+  const answer = state.answers[node.parentId];
+
+  for (const rule of node.options) {
+    if (rule.match && rule.match.includes(answer)) {
+      goTo(rule.goto);
+      return;
+    }
+  }
+
+  // Fallback: try cumulative signal routing
+  if (node.options[0] && node.options[0].condition) {
+    for (const rule of node.options) {
+      if (evalCondition(rule.condition)) { goTo(rule.goto); return; }
+    }
+  }
+
+  // Last resort: first child
+  const children = Object.values(state.tree).filter(n => n.parentId === node.id);
+  if (children.length > 0) goTo(children[0].id);
+}
+
+function evalCondition(cond) {
+  // e.g. "axis1.dominant=internal"
+  const [axis, rest] = cond.split('.');
+  const [prop, val] = rest.split('=');
+  if (prop === 'dominant') {
+    const s = state.signals[axis];
+    if (!s) return false;
+    const keys = Object.keys(s);
+    const dominant = keys.reduce((a, b) => s[a] >= s[b] ? a : b);
+    return dominant === val;
+  }
+  return false;
+}
+
+function recordSignal(signal) {
+  const [axis, pole] = signal.split(':');
+  if (state.signals[axis] && state.signals[axis][pole] !== undefined) {
+    state.signals[axis][pole]++;
+  }
+}
+
+// ============================================================
+//  PROGRESS
+// ============================================================
+function updateProgress(node) {
+  if (node.type === 'question') state.interactiveVisited++;
+  const pct = Math.min(100, Math.round((state.interactiveVisited / Math.max(1, state.totalInteractive)) * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Axis markers
+  const id = node.id || '';
+  document.getElementById('m-locus').classList.toggle('active', id.startsWith('A1') || id === 'START');
+  document.getElementById('m-orientation').classList.toggle('active', id.startsWith('A2') || id === 'BRIDGE_1_2');
+  document.getElementById('m-radius').classList.toggle('active', id.startsWith('A3') || id === 'BRIDGE_2_3');
+  document.getElementById('m-close').classList.toggle('active', id === 'SUMMARY' || id === 'END');
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function renderNode(node) {
+  const main = document.getElementById('main');
+
+  const typeLabels = {
+    start: 'Beginning',
+    question: 'Question',
+    reflection: 'Reflection',
+    bridge: 'Transition',
+    summary: 'Summary',
+    end: 'Complete'
+  };
+
+  if (node.type === 'decision') {
+    main.innerHTML = `<div class="card fade-in"><div class="loading" style="padding:20px;font-size:11px;">Processing...</div></div>`;
+    return;
+  }
+
+  if (node.type === 'summary') {
+    renderSummary(node);
+    return;
+  }
+
+  const typeClass = `type-${node.type}`;
+  const label = typeLabels[node.type] || node.type;
+
+  // Interpolate text
+  const text = interpolate(node.text);
+
+  let html = `
+    <div class="card fade-in">
+      <div class="node-type-label ${typeClass}">${label}</div>
+      <div class="${node.type === 'question' ? 'question-text' : 'body-text'}">${text}</div>
+  `;
+
+  if (node.type === 'question' && node.options && node.options.length) {
+    html += `<div class="options" id="optionsList">`;
+    node.options.forEach((opt, i) => {
+      const letters = ['A', 'B', 'C', 'D', 'E'];
+      html += `<button class="option-btn" data-index="${letters[i]}" data-value="${opt}" onclick="selectOption('${node.id}', '${escHtml(opt)}', this)">${opt}</button>`;
+    });
+    html += `</div>`;
+  } else if (['reflection', 'end'].includes(node.type)) {
+    html += `<button class="continue-btn" onclick="continueFrom('${node.id}')">Continue</button>`;
+  }
+
+  html += `</div>`;
+  main.innerHTML = html;
+}
+
+function renderSummary(node) {
+  const s1 = getDominant('axis1') === 'internal'
+    ? node.summaryTemplates.axis1.internal
+    : getDominant('axis1') === 'external'
+      ? node.summaryTemplates.axis1.external
+      : node.summaryTemplates.axis1.mixed;
+
+  const s2 = getDominant('axis2') === 'contribution'
+    ? node.summaryTemplates.axis2.contribution
+    : getDominant('axis2') === 'entitlement'
+      ? node.summaryTemplates.axis2.entitlement
+      : node.summaryTemplates.axis2.mixed;
+
+  const s3 = getDominant('axis3') === 'other'
+    ? node.summaryTemplates.axis3.other
+    : getDominant('axis3') === 'self'
+      ? node.summaryTemplates.axis3.self
+      : node.summaryTemplates.axis3.expanding;
+
+  const insights = node.summaryTemplates.closingInsights;
+  const closing = insights[state.path.length % insights.length];
+
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="card fade-in">
+      <div class="node-type-label type-summary">Today's Reflection</div>
+      <div class="summary-block">
+        <div class="summary-axis axis1">
+          <div class="summary-axis-label">Locus of Control</div>
+          <div class="summary-axis-text">${s1}</div>
+        </div>
+        <div class="summary-axis axis2">
+          <div class="summary-axis-label">Contribution</div>
+          <div class="summary-axis-text">${s2}</div>
+        </div>
+        <div class="summary-axis axis3">
+          <div class="summary-axis-label">Radius of Concern</div>
+          <div class="summary-axis-text">${s3}</div>
+        </div>
+      </div>
+      <div class="closing-insight">${closing}</div>
+      <button class="continue-btn" onclick="continueFrom('SUMMARY')">Close session</button>
+    </div>
+  `;
+}
+
+function getDominant(axis) {
+  const s = state.signals[axis];
+  if (!s) return 'mixed';
+  const keys = Object.keys(s);
+  const total = keys.reduce((sum, k) => sum + s[k], 0);
+  if (total === 0) return 'mixed';
+  const dominant = keys.reduce((a, b) => s[a] >= s[b] ? a : b);
+  const other = keys.filter(k => k !== dominant);
+  const otherMax = Math.max(...other.map(k => s[k]));
+  if (s[dominant] === otherMax) return 'mixed';
+  return dominant;
+}
+
+// ============================================================
+//  INTERACTIONS
+// ============================================================
+function selectOption(nodeId, value, btn) {
+  // Deselect all
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.answers[nodeId] = value;
+
+  // Record signal if question node has one
+  const node = state.tree[nodeId];
+  if (node && node.signal) recordSignal(node.signal);
+
+  // Advance after short pause
+  setTimeout(() => {
+    if (node.target) { goTo(node.target); return; }
+    // Check for decision child
+    const dec = Object.values(state.tree).find(n => n.parentId === nodeId && n.type === 'decision');
+    if (dec) { goTo(dec.id); return; }
+    // Direct child
+    const child = Object.values(state.tree).find(n => n.parentId === nodeId && n.type !== 'decision');
+    if (child) { goTo(child.id); }
+  }, 420);
+}
+
+function continueFrom(nodeId) {
+  const node = state.tree[nodeId];
+  if (!node) return;
+  advance(node);
+}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function interpolate(text) {
+  if (!text) return '';
+  return text.replace(/\{([^}]+)\}/g, (match, key) => {
+    // {nodeId.answer} → state.answers[nodeId]
+    const parts = key.split('.');
+    if (parts[1] === 'answer') return state.answers[parts[0]] || match;
+    // {axis1_summary} etc handled in summary renderer
+    return match;
+  });
+}
+
+function escHtml(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function showError(msg) {
+  document.getElementById('main').innerHTML = `<div class="error">Error: ${msg}<br><br>Make sure reflection-tree.json is in the same folder as this file.</div>`;
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${h}:${m}`;
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+updateClock();
+setInterval(updateClock, 30000);
+loadTree();
+</script>
+</body>
+</html>
